@@ -62,7 +62,7 @@ else if($action == "del")
 }
 
 function connect()
-{	$servername = "localhost";	$username = "unitydit_master";	$password = "bloppy-doppiy789";	$dbname = "unitydit_master_server";
+{	$servername = "localhost";	$username = "HERE_MYSQL_USERNAME";	$password = "HERE_DB_PASSWORD";	$dbname = "HERE_DB_NAME";
 	$conn = mysqli_connect($servername, $username, $password, $dbname);
 	// Check connection
 	if (!$conn) {
