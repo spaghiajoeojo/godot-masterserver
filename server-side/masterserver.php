@@ -1,6 +1,6 @@
 <?php
 /*************************************************************************/
-/*  					  Godot PHP Master Server                        */
+/*  			  Godot PHP Master Server                        */
 /*************************************************************************/
 /*                                                                       */
 /*  This PHP script is a server-side master server for games developed   */
