@@ -1,6 +1,6 @@
 <?php
 /*************************************************************************/
-/*  			  Godot PHP Master Server                        */
+/*  					  Godot PHP Master Server                        */
 /*************************************************************************/
 /*                                                                       */
 /*  This PHP script is a server-side master server for games developed   */
@@ -30,6 +30,7 @@
 /* TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE     */
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
+
 
 
 $action = $_POST["ac"];
@@ -62,88 +63,107 @@ else if($action == "del")
 }
 
 function connect()
-{	$servername = "localhost";	$username = "HERE_MYSQL_USERNAME";	$password = "HERE_DB_PASSWORD";	$dbname = "HERE_DB_NAME";
-	$conn = mysqli_connect($servername, $username, $password, $dbname);
-	// Check connection
-	if (!$conn) {
-		die("Connection failed: " . mysqli_connect_error());
+{	
+	$servername = "localhost";	$username = "YOUR_USERNAME";	$password = "YOUR_PASSWORD";	$dbname = "YOUR_DATABASE"; $driver = "YOUR_DRIVER";
+	
+	
+	$col = $driver.':host='.$servername.';dbname='.$dbname;
+	 
+	
+	try {
+	  $db = new PDO($col , $username, $password); 
 	}
-	return $conn;
+	 
+	
+	catch(PDOException $e) {
+	 
+	  
+	  echo 'Error: '.$e->getMessage();
+	}
+	
+	
+	return $db;
 }
 
 function add_game($name, $ip)
 {	
+	$time = time();
 	$conn = connect();
-	$conn->prepare("INSERT INTO games (ip, name, timestamp) VALUES(?,?,?) ON DUPLICATE KEY UPDATE name = VALUES(name), timestamp = VALUES(timestamp)");
-	if($ip!=null)
+	$stmt = $conn->prepare("INSERT INTO games (ip, name, timestamp) VALUES(:ip,:name,:time) ON DUPLICATE KEY UPDATE name = VALUES(name), timestamp = VALUES(timestamp)");
+	if($ip==null)
 	{
-		$conn->bind_param("s",$ip);
-		$conn->bind_param("s",$name);
-		$conn->bind_param("i",time());
+		$ip = get_client_ip();
 	}
-	else
+	
+	$stmt->bindParam(":ip",$ip);
+	$stmt->bindParam(":name",$name);
+	$stmt->bindParam(":time",$time);
+	
+	try
 	{
-		$conn->bind_param("s",get_client_ip());
-		$conn->bind_param("s",$name);
-		$conn->bind_param("i",time());
+		$stmt->execute();
 	}
-	if ($conn->execute()) {
-		echo "New record created successfully";
-	} else {
-		echo "Error: <br>" . mysqli_error($conn);
+	catch(PDOException $e) {
+		echo 'Error: '.$e->getMessage();
 	}
-	mysqli_close($conn);
+	
 }
 
 function del_game_by_ip($ip)
 {
 	$conn = connect();
-	$conn->prepare("DELETE FROM games WHERE ip=?");
-	$conn->bind_param("s",$ip);
+	$stmt = $conn->prepare("DELETE FROM games WHERE ip=:ip");
+	$stmt->bindParam(":ip",$ip);
 
-	if ($conn->execute()) {
-		echo "Record deleted successfully";
-	} else {
-		echo "Error: <br>" . mysqli_error($conn);
+	try
+	{
+		$stmt->execute();
 	}
-	mysqli_close($conn);
+	catch(PDOException $e) {
+		echo 'Error: '.$e->getMessage();
+	}
+	
 }
 
 function del_game_by_name($name)
 {
 	$conn = connect();
-	$conn->prepare("DELETE FROM games WHERE name=?");
-	$conn->bind_param("s",$name);
-	if ($conn->execute()) {
-		echo "Record deleted successfully";
-	} else {
-		echo "Error: <br>" . mysqli_error($conn);
+	$stmt = $conn->prepare("DELETE FROM games WHERE name=:name");
+	$stmt->bindParam(":name",$name);
+	try
+	{
+		$stmt->execute();
 	}
-	mysqli_close($conn);
+	catch(PDOException $e) {
+		echo 'Error: '.$e->getMessage();
+	}
+	
 }
 
 function get_games()
 {
 	$conn = connect();
-	$SQL = "SELECT * FROM games";
-	$result = mysqli_query($conn,$SQL);
+	$sql = "SELECT * FROM games";
+	$result = $conn->query($sql);
 
 	$i = 0;
 	$outp = "{\n";
-	while($rs = $result->fetch_array(MYSQLI_ASSOC)) {
+	
+	foreach ($conn->query($sql) as $row) {
 		if ($outp != "{\n") {$outp .= ",\n";}
-		$outp .= '"'.$i.'":{"Name":"'  . $rs["name"] . '",';
-		$outp .= '"IP":"'   . $rs["ip"]        . '",';
-		$outp .= '"Timestamp":'. $rs["timestamp"]     . "}"; 
+		$outp .= '"'.$i.'":{"Name":"'  . $row["name"] . '",';
+        $outp .= '"IP":"'   . $row["ip"]        . '",';
+		$outp .= '"Timestamp":'. $row["timestamp"]     . "}"; 
 		$i++;
-	}
+    }
 	$outp .="\n}";
 	header('Content-Type: application/json');
 	echo $outp;
-	mysqli_close($conn);
+	
 }
 
-function get_client_ip() {
+function get_client_ip() 
+{
     $ipaddress = '';
     if ($_SERVER['HTTP_CLIENT_IP'])
         $ipaddress = $_SERVER['HTTP_CLIENT_IP'];
