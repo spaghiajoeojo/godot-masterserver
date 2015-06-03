@@ -74,18 +74,23 @@ function connect()
 function add_game($name, $ip)
 {	
 	$conn = connect();
+	$conn->prepare("INSERT INTO games (ip, name, timestamp) VALUES(?,?,?) ON DUPLICATE KEY UPDATE name = VALUES(name), timestamp = VALUES(timestamp)");
 	if($ip!=null)
 	{
-		$sql = "INSERT INTO games (ip, name, timestamp)	VALUES ('".$ip."', '".$name."', '".time()."') ON DUPLICATE KEY UPDATE name = VALUES(name), timestamp = VALUES(timestamp)";
+		$conn->bind_param("s",$ip);
+		$conn->bind_param("s",$name);
+		$conn->bind_param("i",time());
 	}
 	else
 	{
-		$sql = "INSERT INTO games (ip, name, timestamp)	VALUES ('".get_client_ip()."', '".$name."', '".time()."') ON DUPLICATE KEY UPDATE name = VALUES(name), timestamp = VALUES(timestamp)";
+		$conn->bind_param("s",get_client_ip());
+		$conn->bind_param("s",$name);
+		$conn->bind_param("i",time());
 	}
-	if (mysqli_query($conn, $sql)) {
+	if ($conn->execute()) {
 		echo "New record created successfully";
 	} else {
-		echo "Error: " . $sql . "<br>" . mysqli_error($conn);
+		echo "Error: <br>" . mysqli_error($conn);
 	}
 	mysqli_close($conn);
 }
@@ -93,12 +98,13 @@ function add_game($name, $ip)
 function del_game_by_ip($ip)
 {
 	$conn = connect();
-	$sql = "DELETE FROM games WHERE ip='".$ip."'";
+	$conn->prepare("DELETE FROM games WHERE ip=?");
+	$conn->bind_param("s",$ip);
 
-	if (mysqli_query($conn, $sql)) {
+	if ($conn->execute()) {
 		echo "Record deleted successfully";
 	} else {
-		echo "Error: " . $sql . "<br>" . mysqli_error($conn);
+		echo "Error: <br>" . mysqli_error($conn);
 	}
 	mysqli_close($conn);
 }
@@ -106,12 +112,12 @@ function del_game_by_ip($ip)
 function del_game_by_name($name)
 {
 	$conn = connect();
-	$sql = "DELETE FROM games WHERE name='".$name."'";
-
-	if (mysqli_query($conn, $sql)) {
+	$conn->prepare("DELETE FROM games WHERE name=?");
+	$conn->bind_param("s",$name);
+	if ($conn->execute()) {
 		echo "Record deleted successfully";
 	} else {
-		echo "Error: " . $sql . "<br>" . mysqli_error($conn);
+		echo "Error: <br>" . mysqli_error($conn);
 	}
 	mysqli_close($conn);
 }
